@@ -17,18 +17,36 @@ const LoginScreen = () => {
     const [flag, setFlag] = useState(false)
     const [verified, setVerified] = useState(false)
 
+    const [focusOnName,setFocusOnName]= useState(false)
+    const [focusOnNumber,setFocusOnNumber]= useState(false)
+
+
+
     const getNumber = async () => {
-
-        let number = await AsyncStorage.getItem('user');
-
-        // console.log("27", number)
-
         try {
-            const res = await axios.get(`https://ludo-b2qo.onrender.com/verify?userId=${number}`);
-            const data = res.data;
+            let number = await AsyncStorage.getItem('user');
+            console.log("User ID:", number);
+           
+        
+            if (!number) {
+                console.log("User ID not found in AsyncStorage");
+                return; // or handle this case as appropriate
+            }
+            
+            // Convert number to string before sending the request
+            const userId = parseInt(number.replace(/\D/g, ''), 10);
 
-            if (data.length !== 0) {
+
+            const res = await axios.get(`https://ludo-b2qo.onrender.com/verify?userId=${userId}`);
+            const data = res.data;
+        
+            // console.log("62 Response from server:", data);
+
+
+            if (data && data.length > 0) {
                 setVerified(true);
+
+                
                 navigation.navigate("App", {
                     mobile: parseInt(data[0].mobile)
                 });
@@ -36,21 +54,20 @@ const LoginScreen = () => {
                 setVerified(false);
             }
         } catch (error) {
-            console.log("Error fetching data:", error);
-
+            console.log("75 Error fetching data:", error);
+            // Handle errors here, e.g., show an error message to the user
         }
     };
-
+    
     useEffect(() => {
         getNumber()
-
     })
 
  
     const handleSubmit = async (name, mobileNumber) => {
 
 
-        if (name != "" && mobileNumber.length >= 10) {
+        if (name != "" && mobileNumber.length == 10) {
             // console.log(name, mobileNumber);
             try {
                 const response = await axios.post("https://ludo-b2qo.onrender.com/signup", {
@@ -87,9 +104,6 @@ const LoginScreen = () => {
     };
 
 
-
-   
-
     return (
         <ImageBackground source={require("../../assets/bg.png")} style={{ height: Dimensions.get('screen').height, width: Dimensions.get('screen').width }}>
             <View style={{ marginTop: 80 }}>
@@ -106,7 +120,8 @@ const LoginScreen = () => {
 
 
                         <View style={{ marginTop: 80 }}>
-                            <View style={styles.inputBoxCont}>
+                            <View style={focusOnName? styles.focusedTextInput:styles.inputBoxCont} 
+>
                                 <Ionicons
                                     name="ios-person"
                                     size={24}
@@ -116,13 +131,10 @@ const LoginScreen = () => {
                                 <TextInput
                                     value={name}
                                     onChangeText={(text) => setName(text)}
-                                    style={{
-                                        color: "gray",
-                                        marginVertical: 10,
-                                        width: 300,
-                                        fontSize: name ? 16 : 16,
-                                    }}
-                                    placeholder="enter your name"
+                                    onFocus={()=> setFocusOnName(true)}
+                                    onBlur={()=>setFocusOnName(false)}
+                                    style={styles.textInput} 
+                                    placeholder="Enter your name"
                                 />
 
                             </View>
@@ -136,21 +148,17 @@ const LoginScreen = () => {
 
 
                         <View>
-                            <View style={styles.inputBoxCont}>
+                            <View style={focusOnNumber? styles.focusedTextInput:styles.inputBoxCont} >
                                 <MaterialIcons name="local-phone" size={24} color="gray" style={{ marginLeft: 8 }} />
 
                                 <TextInput
                                     value={mobileNumber}
                                     keyboardType="numeric"
                                     onChangeText={(text) => setMobileNumber(text)}
-                                    secureTextEntry={true}
-                                    style={{
-                                        color: "gray",
-                                        marginVertical: 10,
-                                        width: 300,
-                                        fontSize: mobileNumber ? 16 : 16,
-                                   }} 
-                                    placeholder="enter your Number"
+                                    onFocus={()=> setFocusOnNumber(true)}
+                                    onBlur={()=>setFocusOnNumber(false)}
+                                    style={styles.textInput} 
+                                    placeholder="Enter your number"
                                 />
                             </View>
                             {error.mobileNumber && flag && <Text style={{ color: "red" }}>{error.mobileNumber}</Text>}
@@ -236,4 +244,25 @@ const styles = StyleSheet.create({
         padding: 15,
         borderColor:"white"
     },
+    textInput:{
+        color: "gray",
+        marginVertical: 10,
+        width: 300,
+        fontSize: 16,
+    },
+    focusedTextInput:{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 7,
+        backgroundColor: "#D0D0D0",
+        paddingVertical: 5,
+        borderRadius: 5,
+        marginTop: 20,
+        borderColor:"#f6ae2d",
+        borderWidth:3
+    }
+    
+
 });
+
+//  i want that when user is login once then it navigates to app screen but in app screen when i press back button then it goes to login page but if user is login then i dont want it goes to that login page

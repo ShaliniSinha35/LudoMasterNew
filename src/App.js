@@ -13,10 +13,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import WinnerRobot from "./screens/Winner/WinnerRobot"
 import GameRobot from "./screens/GameRobot/GameRobot"
-const App = () => {
+
+const App = ({navigation}) => {
+
 
   const route = useRoute()
-  console.log("155", route.params.mobile)
+  // console.log("155", route.params.mobile)
   const [state, setState] = useState({
     isGameInProgress: false,
     isStartGameModalVisible: false,
@@ -35,7 +37,7 @@ const App = () => {
   });
 
 
-  console.log(state.isPlayWithRobot)
+  // console.log(state.isPlayWithRobot)
 
 
   const clearAsyncStorageMultiple = async (keysArray) => {

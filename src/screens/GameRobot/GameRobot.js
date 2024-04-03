@@ -1,10 +1,11 @@
+
 import React, { Component, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, ToastAndroid, ImageBackground, TouchableOpacity, Animated, ActivityIndicator, Image, Button, Touchable } from 'react-native';
 import { colors } from '../../util/Colors';
 import PlayerBox from '../../components/PlayerBox/PlayerBox'
 import VerticalCellsContainer from '../../components/VerticalCellsContainer/VerticalCellsContainer';
 import HorizontalCellsContainer from '../../components/HorizontalCellsContainer/HorizontalCellsContainer';
-import { FINISHED, BLUE, BOTTOM_VERTICAL, FOUR, GREEN, HOME, ONE, RED, THREE, TOP_VERTICAL, TWO, YELLOW, R1, Y1, Y9, G1, G9, B1, B9, R9, R2, R3, R4, R5, Y2, Y3, Y5, G2, G3, G4, G5, B2, B3, B4, B15, R12, R17, Y17, Y13, B17, Y16 } from '../../util/Constants';
+import { FINISHED, BLUE, BOTTOM_VERTICAL, FOUR, GREEN, HOME, ONE, RED, THREE, TOP_VERTICAL, TWO, YELLOW, R1, Y1, Y9, G1, G9, B1, B9, R9, R2, R3, R4, R5, Y2, Y3, Y5, G2, G3, G4, G5, B2, B3, B4, B15, R12, R17, Y17, Y13, B17, Y16, Y6, Y7, Y11, B5, Y10, Y15, Y18, Y14, G10, G11 } from '../../util/Constants';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { Haptics } from 'expo-haptics';
 import { FontAwesome } from '@expo/vector-icons';
 import Socket from '../../../utils/Socket';
 import PlayerBoxRobot from "../../components/PlayerBoxRobot/PlayerBoxRobot"
+import BlueJump from '../../../components/Svg/BlueJump';
 
 
 
@@ -37,6 +39,7 @@ export default class GameRobot extends Component {
         this.state = {
             currentPlayer: currentPlayer,
             nextPlayer: nextPlayer,
+            isSoundOn: true,
             playerNumber: number,
             red: this.initPlayer(RED, red, redName),
             yellow: this.initPlayer(YELLOW, yellow, yellowName),
@@ -83,12 +86,13 @@ export default class GameRobot extends Component {
             setTurn: false,
             socketId: null,
             setTimer: false,
-            setIsTimerActive: false
+            setIsTimerActive: false,
+            yellowPieceToMove: null,
+            activeYellowPiece: null,
+            homeYellowPieces: null
 
 
         }
-
-
 
     }
 
@@ -136,7 +140,7 @@ export default class GameRobot extends Component {
             }, 2000);
 
         }
-         else {
+        else {
             // Clear the interval if the turn is not YELLOW                                     
             clearInterval(this.intervalId);
         }
@@ -245,7 +249,7 @@ export default class GameRobot extends Component {
 
     retrieveData = async () => {
 
-let winnerArray1=[]
+        let winnerArray1 = []
 
         const { yellowName, blueName, greenName, redName } = this.props;
 
@@ -275,7 +279,7 @@ let winnerArray1=[]
 
                 }
                 await AsyncStorage.removeItem('playerArray')
-                await AsyncStorage.setItem('playerArray', JSON.stringify(this.state.winnerArray))
+                await AsyncStorage.setItem('playerArray', JSON.stringify(winnerArray1))
 
 
             }
@@ -307,7 +311,7 @@ let winnerArray1=[]
                     winnerArray1.push(sortedValues[i])
                 }
                 await AsyncStorage.removeItem('playerArray')
-                await AsyncStorage.setItem('playerArray', JSON.stringify(this.state.winnerArray))
+                await AsyncStorage.setItem('playerArray', JSON.stringify(winnerArray1))
 
 
             }
@@ -315,6 +319,7 @@ let winnerArray1=[]
                 console.log(error)
             }
         }
+
         else {
 
             try {
@@ -335,15 +340,13 @@ let winnerArray1=[]
 
                 }
 
-                console.log("WinnerArray1",winnerArray1)
+                console.log("WinnerArray1", winnerArray1)
 
                 await AsyncStorage.removeItem('playerArray')
-                await AsyncStorage.setItem('playerArray', JSON.stringify(this.state.winnerArray))
+                await AsyncStorage.setItem('playerArray', JSON.stringify(winnerArray1))
             }
             catch (error) {
-
                 console.log(error)
-
             }
         }
 
@@ -552,7 +555,6 @@ let winnerArray1=[]
             console.error('Error unloading sound:', error);
         }
     }
-
     async playSound() {
         try {
             await this.soundObject.replayAsync();
@@ -560,7 +562,6 @@ let winnerArray1=[]
             console.error('Failed to play sound', error);
         }
     };
-
     renderDiceIcons() {
         const { diceNumber, isRolling } = this.state;
 
@@ -604,18 +605,25 @@ let winnerArray1=[]
 
         }
     }
-
-
     initPieces(playerColor) {
         let time = new Date().getTime();
         return {
             one: { position: playerColor == RED ? R1 : playerColor == YELLOW ? Y1 : playerColor == GREEN ? G1 : playerColor == BLUE ? B1 : null, name: ONE, color: playerColor, updateTime: time, oneCount: [], piecePosition: new Animated.Value(0) },
             two: { position: playerColor == RED ? R1 : playerColor == YELLOW ? Y1 : playerColor == GREEN ? G1 : playerColor == BLUE ? B1 : null, name: TWO, color: playerColor, updateTime: time, twoCount: [], piecePosition: new Animated.Value(0) },
-            three: { position: playerColor == RED ? R1 : playerColor == YELLOW ? Y1 : playerColor == GREEN ? G1 : playerColor == BLUE ? Y5 : null, name: THREE, color: playerColor, updateTime: time, threeCount: [], piecePosition: new Animated.Value(0) },
+            three: { position: playerColor == RED ? R1 : playerColor == YELLOW ? Y1 : playerColor == GREEN ? G1 : playerColor == BLUE ? B1 : null, name: THREE, color: playerColor, updateTime: time, threeCount: [], piecePosition: new Animated.Value(0) },
             four: { position: playerColor == RED ? R1 : playerColor == YELLOW ? Y1 : playerColor == GREEN ? G1 : playerColor == BLUE ? B1 : null, name: FOUR, color: playerColor, updateTime: time, fourCount: [], piecePosition: new Animated.Value(0) }
         }
     }
 
+    toggleSound = () => {
+        this.setState((prevState) => ({ isSoundOn: !prevState.isSoundOn }), () => {
+            if (this.state.isSoundOn) {
+                this.loadSound();
+            } else {
+                this.unloadSound();
+            }
+        });
+    };
 
     render() {
         const { remainingTime, turn } = this.state;
@@ -630,10 +638,20 @@ let winnerArray1=[]
 
 
                 <View style={{ flexDirection: "row", width: Dimensions.get("screen").width, justifyContent: "space-around", alignItems: "center" }}>
-                    <TouchableOpacity style={{ height: 60, width: 60, borderRadius: 50, borderColor: "#7b2cbf", borderWidth: 4, alignItems: "center", justifyContent: "center" }}>
+                    <TouchableOpacity style={{ height: 60, width: 60, borderRadius: 50, borderColor: "#7b2cbf", borderWidth: 4, alignItems: "center", justifyContent: "center" }} onPress={this.toggleSound}>
+                        {
+                            this.state.isSoundOn ?
+                                <Ionicons name="volume-high" size={24} color="white" />
+                                :
+                                <Ionicons name="volume-mute" size={24} color="white" />
+                        }
 
-                        <Ionicons name="settings-sharp" size={24} color="white" />
                     </TouchableOpacity>
+
+
+                    {/* <TouchableOpacity style={{ height: 60, width: 60, borderRadius: 50, borderColor: "#7b2cbf", borderWidth: 4, alignItems: "center", justifyContent: "center" }} onPress={this.toggleSound}>
+    <Text>{this.state.isSoundOn ? 'Turn Off Sound' : 'Turn On Sound'}</Text>
+</TouchableOpacity> */}
 
                     <View style={{ width: 140, borderColor: "gray", borderWidth: 1, borderRadius: 20, alignItems: "center", flexDirection: "row", justifyContent: "center", padding: 4, marginTop: 40 }}>
                         <MaterialIcons name="timer" size={28} color="white" />
@@ -645,9 +663,10 @@ let winnerArray1=[]
 
                     <TouchableOpacity style={{ height: 45, width: 70, borderRadius: 30, borderColor: "#7b2cbf", borderWidth: 4, alignItems: "center", justifyContent: "center", padding: 5 }}>
                         <Text allowFontScaling={false} style={{ color: "white", fontSize: 12 }}>Pot</Text>
-                        <Text allowFontScaling={false} style={{ color: "white", fontSize: 12 }}><FontAwesome name="rupee" size={12} color="white" /> 0.4</Text>
+                        <Text allowFontScaling={false} style={{ color: "white", fontSize: 12 }}><FontAwesome name="rupee" size={12} color="white" /> 2 </Text>
                     </TouchableOpacity>
                 </View>
+
 
 
                 {/* {console.log("627", this.state.setIsTimerActive, this.state.currentPlayer)}// */}
@@ -800,7 +819,7 @@ let winnerArray1=[]
 
         const { diceRollTestDataIndex, diceRollTestData, animateForSelection } = this.state;
 
-        if (animateForSelection) {
+        if (animateForSelection || this.state.isRolling) {
             return;
         }
 
@@ -809,9 +828,9 @@ let winnerArray1=[]
             updatedDiceRollTestDataIndex = 0;
         }
         try {
-            if (this.rollingSound) {
-                await this.rollingSound.replayAsync();
 
+            if (this.state.isSoundOn && this.rollingSound) {
+                await this.rollingSound.replayAsync();
             } else {
                 console.error('Sound object is not properly initialized');
             }
@@ -831,7 +850,14 @@ let winnerArray1=[]
                 useNativeDriver: false,
             }).start(async () => {
 
-                this.setState({ isRolling: false, diceNumber: this.getRandomInt(), diceRollTestDataIndex: updatedDiceRollTestDataIndex });
+                // let randomInt =  Math.floor(Math.random() * (6 - 4 + 1) + 4)
+                let randomInt = Math.floor(Math.random() * Math.floor(6));
+
+
+                console.log("dicenumber robot", this.getRandomInt(randomInt))
+
+
+                this.setState({ isRolling: false, diceNumber: this.getRandomInt(randomInt), diceRollTestDataIndex: updatedDiceRollTestDataIndex });
 
                 await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -843,7 +869,7 @@ let winnerArray1=[]
 
                 if (diceNumber === 6) {
 
-                    this.setState({ isRolling: false, moves: moves, extraChance: extraChance + 1, isWaitingForDiceRoll: false }, () => {
+                    this.setState({ isRolling: false, moves: moves, extraChance: 1, isWaitingForDiceRoll: false }, () => {
                         const yellowPieces = this.state.yellow.pieces;
                         const activePieces = Object.values(yellowPieces).filter(piece => piece.position !== FINISHED);
                         const randomIndex = Math.floor(Math.random() * activePieces.length);
@@ -856,15 +882,28 @@ let winnerArray1=[]
 
 
                         // this.onPieceSelection(randomPiece);
+                        // console.log("ondiceroll", this.state.yellowPieceToMove)
 
 
-                        setTimeout(() => {
-                            this.onMoveSelected(randomPiece, true);
-                            this.setupForTurnChange()
-                        }, randomInt);
+                        if (this.state.activeYellowPiece) {
+                            let randomInt = Math.floor(Math.random() * Math.floor(6));
+                            randomInt = (randomInt + 1) * 1000
+                            this.setState({ animateForSelection: false });
+                            // this.onPieceSelection(randomPiece);
 
 
-                        
+                            setTimeout(() => {
+                                this.onMoveSelected(this.state.activeYellowPiece, true);
+                                this.setupForTurnChange()
+                            }, randomInt);
+                        }
+                        else {
+                            setTimeout(() => {
+                                this.onMoveSelected(randomPiece, true);
+                                this.setupForTurnChange()
+                            }, randomInt);
+                        }
+
 
                     });
 
@@ -872,21 +911,81 @@ let winnerArray1=[]
                 else {
                     this.setState({ isRolling: false, moves: moves, isWaitingForDiceRoll: false, extraChance: 0 }, () => {
                         const yellowPieces = this.state.yellow.pieces;
-                        const activePieces = Object.values(yellowPieces).filter(piece => piece.position !== FINISHED);
-                        const randomIndex = Math.floor(Math.random() * activePieces.length);
-                        const randomPiece = activePieces[randomIndex];
-                        let randomInt = Math.floor(Math.random() * Math.floor(6));
-                        randomInt = (randomInt + 1) * 1000
-                        this.setState({ animateForSelection: false });
-                        // this.onPieceSelection(randomPiece);
-                        setTimeout(() => {
-                            this.onMoveSelected(randomPiece, true);
-                        }, randomInt);
+
+                        console.log("898", this.state.yellowPieceToMove)
+
+                        if (this.state.yellowPieceToMove) {
+
+                            console.log("yellowPieceToMoveCalled")
+                            const activePieces = Object.values(yellowPieces).filter(piece => piece.position !== FINISHED && piece.name == this.state.yellowPieceToMove);
+                            console.log("activePieces", activePieces)
+                            // const randomIndex = Math.floor(Math.random() * activePieces.length);
+                            const randomPiece = activePieces[0];
+                            let randomInt = Math.floor(Math.random() * Math.floor(6));
+                            randomInt = (randomInt + 1) * 1000
+                            this.setState({ animateForSelection: false });
+                            // this.onPieceSelection(randomPiece);
+
+                            console.log("randomPiece", randomPiece)
+                            setTimeout(() => {
+                                this.onMoveSelected(randomPiece, true);
+                            }, randomInt);
+
+                            this.setState({ yellowPieceToMove: null })
+
+                            return;
+                        }
+
+                        else if (this.state.activeYellowPiece) {
+
+
+                            // console.log("isItSafe",this.isItSafeToMove(this.state.activeYellowPiece))
+
+                            console.log("activeYellowPieceCalled")
+                            let randomInt = Math.floor(Math.random() * Math.floor(6));
+                            randomInt = (randomInt + 1) * 1000
+                            this.setState({ animateForSelection: false });
+                            // this.onPieceSelection(randomPiece);
+
+
+                            setTimeout(() => {
+                                this.onMoveSelected(this.state.activeYellowPiece, true);
+                            }, randomInt);
+                        }
+                        else {
+
+                            console.log("randomYellowPieceCalled")
+                            const activePieces = Object.values(yellowPieces).filter(piece => piece.position !== FINISHED);
+                            const randomIndex = Math.floor(Math.random() * activePieces.length);
+                            const randomPiece = activePieces[randomIndex];
+
+                            let randomInt = Math.floor(Math.random() * Math.floor(6));
+
+                            randomInt = (randomInt + 1) * 1000
+                            this.setState({ animateForSelection: false });
+
+
+
+                            // console.log("isItSafe",this.isItSafeToMove(randomPiece))
+
+
+                            setTimeout(() => {
+                                this.onMoveSelected(randomPiece, true);
+                                this.setupForTurnChange()
+                            }, randomInt);
+
+                        }
+
+
+
+
+
 
                     });
-
                 }
+
             })
+
         }
 
         else {
@@ -913,7 +1012,7 @@ let winnerArray1=[]
 
                 if (diceNumber === 6) {
 
-                    this.setState({ isRolling: false, moves: moves, extraChance: extraChance + 1, isWaitingForDiceRoll: false }, () => {
+                    this.setState({ isRolling: false, moves: moves, extraChance: 1, isWaitingForDiceRoll: false }, () => {
                         // Socket.emit('updateGameState', this.state);
                         this.updatePlayerPieces(this.state[turn])
 
@@ -1001,6 +1100,7 @@ let winnerArray1=[]
         three.position != FINISHED ? countOfUnfinishedPieces++ : undefined;
         four.position != FINISHED ? countOfUnfinishedPieces++ : undefined;
         return countOfUnfinishedPieces == 1;
+
     }
 
     playerHasOptionsForMoves(player) {
@@ -1014,14 +1114,14 @@ let winnerArray1=[]
     }
 
     getCountMoveOptions(player) {
+
         const { one, two, three, four } = player.pieces;
-        // console.log(one, two, three, four)
         const { moves } = this.state;
         let hasSix = moves.filter(move => move == 6).length > 0
 
 
         const isMovePossibleForPosition = (position) => {
-            // console.log("475", position)
+
             if (position === FINISHED) {
                 return false;
             }
@@ -1036,7 +1136,7 @@ let winnerArray1=[]
             let positionTocheckFor = parseInt(position.substring(1, position.length))
 
             moves.forEach((move) => {
-                // console.log("489", move)
+
                 if (!isMovePossible) {
                     let possiblePossition = move == 1 ? 18 : move == 2 ? 17 : move == 3 ? 16 : move == 4 ? 15 : move == 5 ? 14 : undefined;
                     if (possiblePossition) {
@@ -1049,7 +1149,6 @@ let winnerArray1=[]
 
             return isMovePossible;
         }
-
 
         let countOfOptions = 0;
         isMovePossibleForPosition(one.position) ? countOfOptions++ : undefined;
@@ -1169,8 +1268,10 @@ let winnerArray1=[]
         return undefined;
     }
 
-    didGetBonusWithNewPosition(piece) {
+    didGetBonusWithNewPosition(piece, move) {
         let flag = false
+
+        console.log(move, "move")
 
 
         if (piece.position == FINISHED) {
@@ -1181,13 +1282,9 @@ let winnerArray1=[]
         }
 
 
-
-
         if (piece.position == R1 || piece.position == R9 || piece.position == Y1 || piece.position == Y9 || piece.position == G1 || piece.position == G9 || piece.position == B1 || piece.position == B9) {
             return false;
         }
-
-
 
         const checkIfPositionMatchesExistingPiece = (piece, player) => {
 
@@ -1237,7 +1334,7 @@ let winnerArray1=[]
                     sum = sum + two.twoCount[i]
                     // piece.oneCount.push 
                 }
-                console.log("1211", sum)
+                // console.log("1211", sum)
 
                 if (piece.name == "one") {
                     piece.oneCount.push(sum)
@@ -1308,10 +1405,8 @@ let winnerArray1=[]
             return positionMatched;
         }
 
-
-
-
         const { red, blue, yellow, green } = this.state;
+
         if (piece.color != red.player && checkIfPositionMatchesExistingPiece(piece, red)) {
             this.playSound()
             this.displayTimer()
@@ -1341,10 +1436,15 @@ let winnerArray1=[]
 
         }
 
-        if (this.state.extraChance >= 1) {
 
-            return true;
-        }
+        // if (move == 6 || this.state.extraChance == 1) {
+
+        //     console.log("extrachance",move,this.state.extraChance)
+        //     this.displayTimer()
+
+        //     return true;
+
+        // }
 
         return false;
     }
@@ -1464,27 +1564,301 @@ let winnerArray1=[]
     }
 
 
-    getRandomInt() {
-        let randomInt = Math.floor(Math.random() * Math.floor(6));
-        return randomInt + 1;
-        // const {diceRollTestData,diceRollTestDataIndex} = this.state;
-        // return diceRollTestData[diceRollTestDataIndex];
+
+
+    getRandomInt(value) {
+
+
+
+        function findMovablePiece(state) {
+            const yellowPieces = state.yellow.pieces;
+            const bluePieces = state.blue.pieces;
+            const activePieces = Object.values(yellowPieces).filter(piece => piece.position !== FINISHED && piece.position !== Y1);
+
+          
+
+            if (activePieces.length > 0) {
+
+                console.log("1527", activePieces)
+                const homePosition = ["Y14", "Y15", "Y16", "Y17", "Y18"]
+                const targetPosition = ["G9", "G10", "G11", "G12", "G13", "B1"]
+                const usedPieces = []
+
+                const homePieces = []
+
+                console.log("activepieces[0]position", activePieces[0].position)
+
+
+                if (homePosition.includes(activePieces[0].position)) {
+                    homePieces.push(activePieces[0]);
+
+                    return null;
+                }
+
+
+                else if (targetPosition.includes(activePieces[0].position)) {
+                    usedPieces.push(activePieces[0])
+                    console.log("found", usedPieces.length)
+
+
+                    if (usedPieces.length >= 2) {
+
+
+                        console.log("usedPieces", usedPieces)
+                        return usedPieces[0]
+                    }
+                    else {
+                        return null;
+                    }
+                }
+
+
+                else {
+                    return activePieces[0];
+                }
+
+
+            }
+
+
+
+        }
+
+
+        function findCorrespondingPieces(state) {
+            const bluePieces = state.blue.pieces;
+            const yellowPieces = state.yellow.pieces;
+            const cBluePieces = {};
+            const cYellowPieces = {};
+
+
+            for (const yellowPieceKey in yellowPieces) {
+                const yellowPiece = yellowPieces[yellowPieceKey];
+                const yellowPosition = yellowPiece.position;
+
+
+                for (const bluePieceKey in bluePieces) {
+                    const bluePiece = bluePieces[bluePieceKey];
+                    const bluePosition = bluePiece.position;
+
+
+                    if (bluePosition.charAt(0) === yellowPosition.charAt(0)) {
+
+                        cYellowPieces[yellowPieceKey] = yellowPiece;
+                        break;
+
+
+                    }
+
+
+                }
+            }
+
+            // Iterate over yellow pieces
+            for (const bluePieceKey in bluePieces) {
+                const bluePiece = bluePieces[bluePieceKey];
+                const bluePosition = bluePiece.position;
+
+                // Iterate over yellow pieces
+                for (const yellowPieceKey in yellowPieces) {
+                    const yellowPiece = yellowPieces[yellowPieceKey];
+                    const yellowPosition = yellowPiece.position;
+
+                    // Check if the cell positions match
+                    if (yellowPosition.charAt(0) === bluePosition.charAt(0)) {
+
+                        const bluePos = parseInt(bluePosition.substring(1, bluePosition.length))
+                        const yellowPos = parseInt(yellowPosition.substring(1, yellowPosition.length))
+
+                        if (bluePos < yellowPos) {
+                            cBluePieces[bluePieceKey] = bluePiece;
+                            break;
+
+                        }
+                    }
+                }
+            }
+
+            return { cBluePieces, cYellowPieces };
+        }
+
+        const { cBluePieces, cYellowPieces } = findCorrespondingPieces(this.state)
+
+
+
+        function findCorrespondingYellowPieces(state) {
+            const bluePieces = state.blue.pieces;
+            const yellowPieces = state.yellow.pieces;
+            const correspondingBluePieces = {};
+            const correspondingYellowPieces = {};
+
+            // Iterate over blue pieces
+            for (const bluePieceKey in bluePieces) {
+                const bluePiece = bluePieces[bluePieceKey];
+                const bluePosition = bluePiece.position;
+
+                // Iterate over yellow pieces
+                for (const yellowPieceKey in yellowPieces) {
+                    const yellowPiece = yellowPieces[yellowPieceKey];
+                    const yellowPosition = yellowPiece.position;
+
+                    // Check if the cell positions match
+                    if (bluePosition.charAt(0) === yellowPosition.charAt(0)) {
+                        // Add corresponding yellow piece to the result
+                        correspondingBluePieces[bluePieceKey] = bluePiece;
+                        break;
+                        // Exit the loop since we found the corresponding yellow piece
+
+                    }
+
+
+                }
+            }
+
+            // Iterate over yellow pieces
+            for (const yellowPieceKey in yellowPieces) {
+                const yellowPiece = yellowPieces[yellowPieceKey];
+                const yellowPosition = yellowPiece.position;
+
+                // Iterate over yellow pieces
+                for (const bluePieceKey in bluePieces) {
+                    const bluePiece = bluePieces[bluePieceKey];
+                    const bluePosition = bluePiece.position;
+
+                    // Check if the cell positions match
+                    if (yellowPosition.charAt(0) === bluePosition.charAt(0)) {
+
+                        // console.log("yellowposition",yellowPosition);
+                        // console.log("blueposition",bluePosition);
+                        const bluePos = parseInt(bluePosition.substring(1, bluePosition.length))
+                        const yellowPos = parseInt(yellowPosition.substring(1, yellowPosition.length))
+                        // const blueCell = bluePosition.substring(0,1); 
+                        // const yellowCell = yellowPosition.substring(0,1);
+
+
+                        if (bluePos > yellowPos) {
+
+                            correspondingYellowPieces[yellowPieceKey] = yellowPiece;
+                            break; // Exit the loop since we found the corresponding yellow piece
+
+                        }
+                    }
+                }
+            }
+
+            return { correspondingBluePieces, correspondingYellowPieces };
+        }
+
+        const { correspondingBluePieces, correspondingYellowPieces } = findCorrespondingYellowPieces(this.state);
+        console.log("bluepieces", correspondingBluePieces)
+        console.log("yellowpieces", correspondingYellowPieces)
+
+
+
+ 
+
+        const movablePiece = findMovablePiece(this.state)
+        this.setState({ activeYellowPiece: movablePiece })
+
+
+
+        if (value && Object.keys(correspondingBluePieces).length !== 0 && Object.keys(correspondingYellowPieces).length !== 0) {
+
+            console.log("1655")
+            const blue_first_value = Object.values(correspondingBluePieces)[0].position;
+            const robot_first_value = Object.values(correspondingYellowPieces)[0].position;
+            this.setState({ yellowPieceToMove: Object.values(correspondingYellowPieces)[0].name }, () => {
+                console.log("yellowPieceToMove", this.state.yellowPieceToMove);
+            });
+
+
+            const blue_first_value_num = parseInt(blue_first_value.substring(1));
+            const robot_first_value_num = parseInt(robot_first_value.substring(1));
+
+            const diff = blue_first_value_num - robot_first_value_num;
+            console.log("diff", diff);
+            if (diff <= 5 && diff >= 1) {
+                return diff;
+
+            }
+
+
+            else {
+                return value;
+            }
+
+        }
+
+        else if (!value && Object.keys(cBluePieces).length !== 0 && Object.keys(cYellowPieces).length !== 0) {
+            console.log("blue turn")
+            const robot_first_value = Object.values(cYellowPieces)[0].position;
+            var size = Object.keys(cBluePieces).length;
+            console.log("size", size)
+            const vArr = []
+            for (let i = 0; i < size; i++) {
+                const blue_first_value = Object.values(cBluePieces)[i].position;
+                const blue_first_value_num = parseInt(blue_first_value.substring(1));
+                const robot_first_value_num = parseInt(robot_first_value.substring(1));
+
+
+                const diff = robot_first_value_num - blue_first_value_num;
+                console.log("diff", diff);
+
+                if (diff <= 6 && diff >= 1) {
+                    vArr.push(diff);
+                }
+
+
+
+            }
+
+
+
+
+            let randomInt;
+            // if (vArr.length > 0 && Math.random() < 0.5) {
+            //     // Select from vArr if it's not empty and a random condition is met
+            //     randomInt = vArr[Math.floor(Math.random() * vArr.length)];
+            // } else {
+            // If vArr is empty or random condition is not met, select a random integer from 1 to 6
+            while (true) {
+                randomInt = Math.floor(Math.random() * 6) + 1; // Generate a random number from 1 to 6
+                if (!vArr.includes(randomInt)) {
+                    break; // Exit loop if the generated random integer is not in vArr
+                }
+            }
+
+
+            console.log("randomInt", randomInt);
+            console.log("varr", vArr)
+            return randomInt;
+
+        }
+
+        else {
+            if (value) {
+                let randomInt = Math.floor(Math.random() * (6 - 4 + 1) + 4)
+                return randomInt;
+            }
+            else {
+                let randomInt = Math.floor(Math.random() * 6) + 1;
+                return randomInt;
+            }
+
+        }
+
+
     }
-
-
     getRobotRandomInt() {
         let randomInt = Math.floor(Math.random() * Math.floor(6));
-        
-       
+
+
         if (Math.random() < 0.2) {
             randomInt += 6;
         }
-    
+
         return randomInt + 1;
     }
-    
-
-
     onPieceSelection = async (selectedPiece, value) => {
         //  console.log(selectedPiece)
 
@@ -1514,15 +1888,14 @@ let winnerArray1=[]
         const player = this.state[selectedPiece.color];
         const { one, two, three, four } = player.pieces;
 
+
+
+
         if (moves.length == 1) {
             if (selectedPiece.position == HOME && moves[0] != 6) {
                 return;
             }
             this.movePieceByPosition(selectedPiece, moves.shift());
-
-
-
-
 
         }
 
@@ -1587,7 +1960,6 @@ let winnerArray1=[]
 
 
     }
-
     onMoveSelected = async (selectedPiece, value) => {
         //  console.log(selectedPiece)
 
@@ -1618,11 +1990,6 @@ let winnerArray1=[]
                 return;
             }
             this.movePieceByPosition(selectedPiece, moves.shift());
-
-
-
-
-
         }
 
         else if (moves.length > 1) {
@@ -1686,7 +2053,6 @@ let winnerArray1=[]
 
 
     }
-
     isMovePossibleForPosition = (position, move) => {
         let isMovePossible = false;
         let positionTocheckFor = parseInt(position.substring(1, position.length))
@@ -1700,7 +2066,6 @@ let winnerArray1=[]
 
         return isMovePossible;
     }
-
     async movePieceByPosition(piece, move, delay = 200) {
 
         const { redScore, yellowScore, blueScore, greenScore } = this.state
@@ -1710,6 +2075,9 @@ let winnerArray1=[]
         let totalMoves = move;
         // console.log("856", position)
         let cellAreaIndicator = piece.position.substring(0, 1);
+
+
+
 
         if (piece.position == HOME && move == 6) {
             newPosition = piece.color == RED ? R1 : piece.color == YELLOW ? Y1 : piece.color == GREEN ? G1 : piece.color == BLUE ? B1 : undefined;
@@ -1759,18 +2127,30 @@ let winnerArray1=[]
         }
         if (newPosition != "") {
 
+            //  <BlueJump></BlueJump>
+
+            // const jumpValue = new Animated.Value(0);
+
+            // // Perform the jump animation
+            // Animated.sequence([
+            //     Animated.timing(jumpValue, {
+            //         toValue: 1,
+            //         duration: 100,
+            //         useNativeDriver: true,
+            //     }),
+            //     Animated.timing(jumpValue, {
+            //         toValue: 0,
+            //         duration: 100,
+            //         useNativeDriver: true,
+            //     }),
+            // ]).start();
+
             piece.position = newPosition;
             piece.updateTime = new Date().getTime();
 
-            // {
-            //     console.log("move", move)
-            // }
 
 
-            if (move == 6 || this.state.extraChance >= 1) {
 
-                this.displayTimer();
-            }
 
             if (piece.name == "one") {
                 piece.oneCount.push(move)
@@ -1818,7 +2198,9 @@ let winnerArray1=[]
 
         }
 
-        if (this.didGetBonusWithNewPosition(piece) && !this.isPlayerFinished(this.state[piece.color])) {
+
+
+        if (this.didGetBonusWithNewPosition(piece, move) && !this.isPlayerFinished(this.state[piece.color])) {
             let count = this.state.bonusCount + 1;
             this.setState({ bonusCount: count }, () => {
 
@@ -1836,6 +2218,29 @@ let winnerArray1=[]
 
             })
             // Socket.emit('updateGameState', this.state);
+        }
+
+        else if (move == 6 || this.state.extraChance == 1) {
+
+            console.log("extrachance", move, this.state.extraChance)
+            this.displayTimer()
+            let count = this.state.bonusCount + 1;
+            this.setState({ bonusCount: count }, () => {
+
+                let player = this.state[piece.color]
+                // console.log("moves", this.state.moves)
+                if (this.state.moves.length == 1) {
+                    // this.setState({animateForSelection:false,moves:this.state.moves})
+
+                    this.updatePlayerPieces(player)
+
+                }
+                else if (this.state.moves.length == 0 || this.isPlayerFinished(player)) {
+                    this.setState({ animateForSelection: false, moves: [] })
+                }
+
+            })
+
         }
         else {
             this.setState(this.state, () => {
@@ -1874,7 +2279,6 @@ let winnerArray1=[]
 
 
     }
-
     renderPlayerBox(playerName, player, playerScore, lifeline, timer, customStyle) {
         const { one, two, three, four } = player.pieces;
         customStyle.opacity = this.state.turn == player.player ? 1 : 0.6;
@@ -1905,6 +2309,45 @@ let winnerArray1=[]
             />
         )
     }
+
+
+
+
+    isItSafeToMove(piece) {
+        const bluePieces = this.state.blue.pieces;
+        const robotPiecePosition = piece.position;
+
+
+        for (const bluePieceKey in bluePieces) {
+            const bluePiece = bluePieces[bluePieceKey];
+            const bluePosition = bluePiece.position;
+
+            if (bluePosition.charAt(0) === robotPiecePosition.charAt(0)) {
+
+                const blue_num = parseInt(bluePosition.substring(1));
+                const robot_num = parseInt(robotPiecePosition.substring(1));
+
+
+                if (blue_num > robot_num) {
+                    console.log("Blue_num greater than robot_num")
+                    return true;
+                }
+                else {
+                    return false;
+                }
+
+
+
+
+            }
+
+
+
+        }
+
+
+    }
+
 }
 
 
@@ -2089,5 +2532,3 @@ const styles = StyleSheet.create({
         // paddingRight: 20
     },
 })
-
-

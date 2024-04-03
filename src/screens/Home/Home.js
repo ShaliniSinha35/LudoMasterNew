@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, Image, ImageBackground, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, Image, ImageBackground, ActivityIndicator,BackHandler,Alert } from 'react-native';
 import NewGameModel from '../../components/NewGameModel/NewGameModel'
 import TwoPlayerModal from '../../components/NewGameModel/TwoPlayerModal';
 import ThreePlayerModal from '../../components/NewGameModel/ThreePlayerModal';
@@ -30,9 +30,11 @@ export default Home = ({
 
 }) => {
 
+
+ 
+
   const [selectedPlayers, setSelectedPlayers] = useState(null);
   const [number, setMobileNumber] = useState(mobileNumber)
-
   const [roomStatus, setRoomStatus] = useState(null);
   const [roomId, setRoomId] = useState(null)
   const [socketId, setSocketId] = useState(null)
@@ -46,6 +48,41 @@ export default Home = ({
   const [playerTwo, setPlayerTwo] = useState(null);
   const [walletValue, setWalletValue] = useState(null)
 
+  // console.log("home number", mobileNumber,number)
+
+
+
+
+
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert("Exit App", "Are you sure you want to exit?", [
+        {
+          text: "Cancel",
+          onPress: () => null,
+          style: "cancel"
+        },
+        {
+          text: "Exit",
+          onPress: () => BackHandler.exitApp()
+        }
+      ]);
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+
+
+  useEffect(() => {
+    setMobileNumber(mobileNumber);
+  }, []);
   var cp = ''
   var np = ''
 
@@ -59,24 +96,28 @@ export default Home = ({
 
   const getWalletValue = async () => {
 
-    try {
-      const res = await axios.get(`https://ludo-b2qo.onrender.com/getUserData?userId=${mobileNumber}`);
+    if(mobileNumber){
 
-      const data = res.data
+      try {
+        const res = await axios.get(`https://ludo-b2qo.onrender.com/getUserData?userId=${mobileNumber}`);
+  
+        const data = res.data
+  
+        // console.log("63", res.data[0].wallet)
+        setWalletValue(res.data[0].wallet)
+      }
+      catch (error) {
+        console.log(error)
+      }
+    }
 
-      console.log("63", res.data[0].wallet)
-      setWalletValue(res.data[0].wallet)
-    }
-    catch (error) {
-      console.log(error)
-    }
 
 
   }
 
   useEffect(() => {
     getWalletValue()
-  }, [walletValue])
+  })
 
 
   const playerList = [
@@ -176,7 +217,7 @@ export default Home = ({
         np = room.sockets[0]
         setCurrentPlayer(room.sockets[1])
         setNextPlayer(room.sockets[0])
-        setPlayerTwo(room.users[0])
+        setPlayerTwo(room.users[1])
         setCurrentNextPlayer(cp, np)
       }
 
@@ -186,7 +227,7 @@ export default Home = ({
 
         setTimeout(() => {
           onStart()
-        }, 6000);
+        }, 3000);
 
 
       }
@@ -215,7 +256,7 @@ export default Home = ({
   const handleTwo = () => {
 
     setFlag('Searching for a Player...')
-    const playerId = mobileNumber
+    const playerId = number ? number : mobileNumber
     Socket.emit('joinRoom', { user: playerId });
 
   }
@@ -225,9 +266,7 @@ export default Home = ({
   //   onBlueInput('Player 1')
   //   onYellowInput('Player 2')
 
-
   // onNewGameButtonPress()
-
   // };
 
   const handleThree = () => {
@@ -254,52 +293,102 @@ export default Home = ({
   }, [selectedPlayers])
 
 
-
   const { width } = Dimensions.get('screen');
-  const translateX = new Animated.Value(width); // Set initial value to width
-  const animatedLoop = Animated.loop(
-    Animated.timing(translateX, {
-      toValue: -width,
-      duration: 1000,
-      useNativeDriver: false,
-    })
-  );
+  const translateX = new Animated.Value(0); // Set initial value to width
+ 
+ 
+  // const animatedLoop = Animated.loop(
+  //   Animated.timing(translateX, {
+  //     toValue: -(width - viewWidth) / 2, 
+  //     duration: 500,
+  //     useNativeDriver: false,
+  //   })
+  // );
 
   useEffect(() => {
+    const viewWidth = 200;
+    
+
     const resetAnimation = Animated.timing(translateX, {
-      toValue: width, // Reset to initial value
+      toValue: 0,
       duration: 0,
       useNativeDriver: false,
     });
 
+    const animatedLoop = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: width - viewWidth,
+        duration: 500,
+        useNativeDriver: false,
+      })
+    );
+
     const loopAnimation = Animated.sequence([animatedLoop, resetAnimation]);
 
-    loopAnimation.start();
-
-    // Update the image index on each animation iteration
     const eventListener = Animated.event(
       [{ nativeEvent: { translateX: translateX } }],
       { useNativeDriver: false }
     );
 
-    translateX.addListener((value) => {
-      if (value.value === 0) {
-        // Reset the image index when the animation completes a loop
-        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % playerList.length);
-        loopAnimation.reset(); // Start a new loop
-      }
-    });
+    loopAnimation.start();
+
+    // translateX.addListener((value) => {
+    //   if (value.value === 0) {
+    //     // Reset the image index when the animation completes a loop
+    //     setCurrentImageIndex((prevIndex) => (prevIndex + 1) % playerList.length);
+    //     loopAnimation.reset(); // Start a new loop
+    //   }
+
+    // });
+
+    const intervalId = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % playerList.length);
+      loopAnimation.reset();
+    }, 500); // Change player every 0.5 seconds
 
     return () => {
-      // Clean up animations when the component unmounts
-      translateX.removeAllListeners();
+      clearInterval(intervalId);
       loopAnimation.stop();
     };
-  }, [translateX]);
+  }, [translateX]); // No dependencies needed// Step 2: Ensure correct dependencies are passed// Include translateX and currentImageIndex in the dependency array
+  
+  
+
 
   useEffect(() => {
     // console.log("Player Two:", playerTwo);
   }, [playerTwo]);
+
+
+
+  const getNumber = async () => {
+    try {
+        let number = await AsyncStorage.getItem('user');
+        console.log("User ID:", number);
+       
+    
+        if (!number) {
+            console.log("User ID not found in AsyncStorage");
+            return; // or handle this case as appropriate
+        }
+        
+        // Convert number to string before sending the request
+        const userId = parseInt(number.replace(/\D/g, ''), 10);
+
+         setMobileNumber(userId)
+       
+    } catch (error) {
+        console.log("43 Error fetching data:", error);
+        // Handle errors here, e.g., show an error message to the user
+    }
+  };
+
+
+useEffect(() => {
+    getNumber()
+},[])
+
+
   return (
     <ImageBackground source={require("../../../assets/bg.png")} style={styles.container}>
 
@@ -312,7 +401,8 @@ export default Home = ({
         <View style={{width:45,height:45,borderRadius:40,borderColor:"#f6ae2d",borderWidth:2,alignItems:"center"}}>
         <Image source={require("../../../assets/player2.png")} style={{ width: 40, height: 40, borderRadius: 50 }}></Image>
         </View>
-        <Text style={{ color: "white", textAlign: "center", marginTop: 2, fontSize: 15, marginTop: 10 }}>  +91 {number}</Text>
+     
+        { number && <Text style={{ color: "white", textAlign: "center", marginTop: 2, fontSize: 15, marginTop: 10 }}>  +91{number}</Text>}
         </View>
          <View style={{alignItems:"center"}}>
 
@@ -367,28 +457,35 @@ export default Home = ({
               >
                 <>
 
-                  <Image style={{ position: "absolute", opacity: 0.2, height: 150, width: 150, top: -30 }} source={require("../../../assets/gif1.gif")} ></Image>
-                  <Image source={require("../../../assets/player2.png")} style={{ width: 85, height: 88, resizeMode: "contain" }}></Image>
-                  <Text style={{ position: "absolute", bottom: -26, color: "white" }} >+91{number}</Text>
+                  {/* <Image style={{ position: "absolute", opacity: 0.2, height: 120, width: 120, top: -30 }} source={require("../../../assets/gif1.gif")} ></Image> */}
+                  <Image source={require("../../../assets/player2.png")} style={{ width: 70, height: 70
+                    , resizeMode: "contain",marginBottom:15 }}></Image>
+                  <Text style={{  color: "white",fontSize:10 }} >{number? number : mobileNumber}</Text>
                 </>
 
               </View>
               <Text style={{ color: "#ff8800", fontSize: 18, marginBottom: 10, fontWeight: 500 }}> VS </Text>
 
-              <Animated.View
+                <View style={{width:250,height:"auto"}}>
+                <Animated.View
                 style={[
                   styles.box1,
                   {
                     transform: [{ translateX: translateX }],
                   },
                 ]}
+
               >
+
+                {/* {console.log("465",playerList[currentImageIndex].number)} */}
                 <>
-                  <Image source={playerList[currentImageIndex].image} style={{ width: 55, height: 65, resizeMode: "contain" }}></Image>
-                  <Text style={{ position: "absolute", bottom: -26, color: "white" }} >{playerList[currentImageIndex].number}</Text>
+                  <Image source={playerList[currentImageIndex].image} style={{ width: 55, height: 60, resizeMode: "contain",marginBottom:15 }}></Image>
+                  <Text style={{  color: "white",fontSize:10 }} >{playerList[currentImageIndex].number}</Text>
                 </>
 
-              </Animated.View>
+                </Animated.View>
+                </View>
+             
 
 
               <Text style={{ position: "absolute", bottom: 35, color: "white", marginBottom: 5 }}>Searching for opponent...</Text>
@@ -424,13 +521,13 @@ export default Home = ({
                   ]}
                 >
                   <>
-                    <Image source={require("../../../assets/player2.png")} style={{ width: 85, height: 88, resizeMode: "contain" }}></Image>
-                    <Text style={{ position: "absolute", bottom: -26, color: "white" }} >+91{number}</Text>
+                    <Image source={require("../../../assets/player2.png")} style={{ width: 70, height: 70, resizeMode: "contain",marginBottom:15 }}></Image>
+                    <Text style={{  color: "white",fontSize:10 }} >{number? number : mobileNumber}</Text>
                   </>
 
                 </View>
 
-                <Text style={{ color: "#ff8800", fontSize: 18, marginBottom: 30, fontWeight: 500 }}> VS</Text>
+                <Text style={{ color: "#ff8800", fontSize: 12, marginBottom: 30, fontWeight: 500 }}> VS</Text>
                 <View
                   style={[
                     styles.box,
@@ -438,8 +535,8 @@ export default Home = ({
                 >
 
                   <>
-                    <Image source={require("../../../assets/player4.png")} style={{ width: 85, height: 88, resizeMode: "contain" }}></Image>
-                    <Text style={{ position: "absolute", bottom: -26, color: "white" }}>+91{playerTwo}</Text>
+                    <Image source={require("../../../assets/player4.png")} style={{ width: 70, height: 70, resizeMode: "contain",marginBottom:15 }}></Image>
+                    <Text style={{ color: "white",fontSize:10 }}>{playerTwo}</Text>
                   </>
                 </View>
 
@@ -540,8 +637,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   box: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: 80,
     // backgroundColor: '#240046',
     backgroundColor: '#7b2cbf',
@@ -551,8 +648,8 @@ const styles = StyleSheet.create({
     marginBottom: 70
   },
   box1: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     borderRadius: 80,
     backgroundColor: '#240046',
     // backgroundColor: '#7b2cbf',

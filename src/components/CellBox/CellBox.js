@@ -10,6 +10,7 @@ import ReadyRed from '../../../components/Svg/ReadyRed';
 import ReadyGreen from '../../../components/Svg/ReadyGreen';
 import ReadyYellow from '../../../components/Svg/ReadyYellow';
 import ReadyBlue from '../../../components/Svg/ReadyBlue';
+import BlueJump from '../../../components/Svg/BlueJump';
 
 
 
