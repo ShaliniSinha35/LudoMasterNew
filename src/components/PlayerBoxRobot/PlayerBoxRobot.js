@@ -82,6 +82,7 @@ export default PlayerBoxRobot = ({ color, customStyle, lifeline, one, two, three
 
         if(one.position == FINISHED || two.position == FINISHED || three.position == FINISHED || four.position == FINISHED){
              setScore(sum * 2)
+             storeData(sum * 2)
         }
 
 
@@ -291,7 +292,7 @@ export default PlayerBoxRobot = ({ color, customStyle, lifeline, one, two, three
                             {
                                 timer ?
                                     <>
-                                        <Image style={{ position: "absolute", opacity: 0.2, height: 90, width: 110, top: -40, left: -10 }} source={require("../../../assets/gif1.gif")} ></Image>
+                                        <Image style={{ position: "absolute", opacity: 0.2, height: 100, width: 110, top: -40, left: -10 }} source={require("../../../assets/gif1.gif")} ></Image>
 
 
                                         {color == '#29b6f6' ? <Image source={require("../../../assets/player2.png")} style={{ height: 80, width: 90, resizeMode: "contain" }}></Image> : <Image source={require("../../../assets/player4.png")} style={{ height: 80, width: 90, resizeMode: "contain" }}></Image>}
@@ -311,7 +312,7 @@ export default PlayerBoxRobot = ({ color, customStyle, lifeline, one, two, three
                         </View>
 
 
-                        <View style={{ backgroundColor: color == '#ec1d27' ? "#780000" : color == '#29b6f6' ? '#0582ca' : color == '#01A147' ? '#004b23' : color == '#ffe01b' ? '#faa307' : null, flexDirection: "row", borderTopLeftRadius: 5, borderTopRightRadius: 5, justifyContent: "space-between", alignItems: "center" }}>
+                        <View style={{ backgroundColor: color == '#ec1d27' ? "#780000" : color == '#29b6f6' ? '#0582ca' : color == '#01A147' ? '#004b23' : color == '#ffe01b' ? '#faa307' : null, flexDirection: "row", borderTopLeftRadius: 5, borderTopRightRadius: 5, justifyContent: "space-between", alignItems: "center",borderColor:"#fff",borderTopWidth:2 }}>
                             <Text allowFontScaling={false} style={{ color: "white", fontSize: 10, margin: 4 }}>+91{playerName}</Text>
                             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "center" }}>
 

@@ -1,6 +1,23 @@
 import io from 'socket.io-client';
 
-const socket = io('https://ludo-b2qo.onrender.com'); // Replace with your server address
-// https://ludo-b2qo.onrender.com
-// http://192.168.0.110:5000
+const socket = io('https://ludomaster.net', {
+  path: '/socket.io',
+  transports: ['websocket', 'polling'],
+  secure: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  timeout: 20000,
+});
+
+// socket.on('connect', () => {
+//   console.log('Connected through Apache proxy');
+// });
+
+// socket.on('connect_error', (error) => {
+//   console.error('Connection error:', error);
+//   console.log(error.code);     
+//   console.log(error.message);  
+//   console.log(error.context);
+// });
+
 export default socket;

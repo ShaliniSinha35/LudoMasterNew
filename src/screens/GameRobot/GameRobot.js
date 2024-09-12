@@ -1,6 +1,6 @@
 
 import React, { Component, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, ToastAndroid, ImageBackground, TouchableOpacity, Animated, ActivityIndicator, Image, Button, Touchable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ToastAndroid, ImageBackground,StatusBar, TouchableOpacity, Animated, ActivityIndicator, Image, Button, Touchable, BackHandler,Easing } from 'react-native';
 import { colors } from '../../util/Colors';
 import PlayerBox from '../../components/PlayerBox/PlayerBox'
 import VerticalCellsContainer from '../../components/VerticalCellsContainer/VerticalCellsContainer';
@@ -13,7 +13,7 @@ import { CountdownCircleTimer } from 'react-native-countdown-circle-timer'
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Table, Row, Rows } from 'react-native-table-component'
-import { Alert, VStack, HStack, IconButton, Box } from "native-base";
+import { Alert, VStack, HStack, IconButton, Box, AlertDialog } from "native-base";
 import { MaterialIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import { Haptics } from 'expo-haptics';
@@ -21,16 +21,22 @@ import { FontAwesome } from '@expo/vector-icons';
 import Socket from '../../../utils/Socket';
 import PlayerBoxRobot from "../../components/PlayerBoxRobot/PlayerBoxRobot"
 import BlueJump from '../../../components/Svg/BlueJump';
-
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
+import { AppState } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 
 export default class GameRobot extends Component {
+
+
+
 
     constructor(props) {
         // console.log(props)
         super(props);
         const { red, blue, yellow, green } = colors;
-        const { redName, blueName, yellowName, greenName, twoPlayer, threePlayer, fourPlayer, number, currentPlayer, nextPlayer, roomId } = props;
+        const { redName, blueName, yellowName, greenName, twoPlayer, threePlayer, fourPlayer, number, currentPlayer, nextPlayer, roomId,navigation } = props;
         this.intervalId = null
         this.rollingSound = new Audio.Sound();
         this.soundObject = new Audio.Sound();
@@ -79,7 +85,7 @@ export default class GameRobot extends Component {
             winnerArray: [],
             status: "warning",
             title: "You missed a turn!",
-            subtitle: "If you miss 3 turns, you will be out of the game",
+            subtitle:"If you miss 3 turns, you will be out of the game",
             showAlert: false,
             timerId: null,
             keysToRemove: ['red', 'green', 'blue', 'yellow'],
@@ -89,15 +95,17 @@ export default class GameRobot extends Component {
             setIsTimerActive: false,
             yellowPieceToMove: null,
             activeYellowPiece: null,
-            homeYellowPieces: null
+            homeYellowPieces: null,
+            navigation: navigation
 
 
         }
 
     }
 
-
+  
     componentDidMount() {
+        
         this.loadSound();
         this.loadPieceBiteSound()
         // console.log("109", this.state.turn)
@@ -118,6 +126,12 @@ export default class GameRobot extends Component {
                 // console.log('Failed to clear keys');
             }
         });
+
+        // AppState.addEventListener('change', this.handleAppStateChange);
+        // this.backHandler = BackHandler.addEventListener(
+        //     'hardwareBackPress',
+        //     this.backAction
+        //   );
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -148,9 +162,8 @@ export default class GameRobot extends Component {
 
     componentWillUnmount() {
 
-        // if (Socket) {
-        //     Socket.emit('disconnect')
-        // }
+       
+   
         this.unloadSound();
         this.unLoadPieceBiteSound()
         clearInterval(this.intervalId);
@@ -161,8 +174,10 @@ export default class GameRobot extends Component {
 
         const { yellowName, blueName, greenName, redName, roomId } = this.props;
         Socket.emit('deleteRoom', roomId)
-
-
+        // AppState.removeEventListener('change', this.handleAppStateChange);
+        // if (this.backHandler) {
+        //     this.backHandler.remove();
+        //   }
 
         // if(redName!=""){
         //     Socket.emit('disconnectUser', { user: redName  })
@@ -180,6 +195,7 @@ export default class GameRobot extends Component {
         // Socket.emit('disconnectSocket', { socket: this.state.currentPlayer })
         // Socket.emit('disconnectSocket', { socket: this.state.nextPlayer })
     }
+
 
     clearAllTimers() {
         // Clear all existing timers
@@ -621,9 +637,44 @@ export default class GameRobot extends Component {
                 this.loadSound();
             } else {
                 this.unloadSound();
+                this.unLoadPieceBiteSound();
             }
         });
     };
+
+
+    // handleAppStateChange = (nextAppState) => {
+    //     if (nextAppState === 'background') {
+    //       // App is in background, pause game or save state
+    //       console.log('App is in background', this.state.turn);
+         
+    //       this.loadSound();
+    //       this.loadPieceBiteSound()
+    //       // console.log("109", this.state.turn)
+    //       this.setupForTurnChange();
+    //       this.displayTimer();
+    //       this.startTimer()
+  
+  
+    //       Socket.on('getTurn', (value) => {
+    //           // console.log("143 turn", this.state.currentPlayer, value)
+    //           this.setState({ setTurn: value })
+    //       })
+  
+    //       this.clearAsyncStorageMultiple(this.state.keysToRemove).then(success => {
+    //           if (success) {
+    //               // console.log('Keys cleared successfully');
+    //           } else {
+    //               // console.log('Failed to clear keys');
+    //           }
+    //       });
+    //     } 
+        
+    //    else if (nextAppState === 'active') {
+    //       // App is active, resume game
+    //       console.log('App is active');
+    //     }
+    //   };
 
     render() {
         const { remainingTime, turn } = this.state;
@@ -634,7 +685,7 @@ export default class GameRobot extends Component {
         return (
 
 
-            <ImageBackground source={require("../../../assets/new.png")} style={{ flex: 1, alignItems: "center" }} >
+            <ImageBackground source={require("../../../assets/b2.png")} style={{ flex: 1, alignItems: "center" }} >
 
 
                 <View style={{ flexDirection: "row", width: Dimensions.get("screen").width, justifyContent: "space-around", alignItems: "center" }}>
@@ -682,7 +733,7 @@ export default class GameRobot extends Component {
                         <TouchableOpacity style={{
                             height: 100, width: 100, borderRadius: 50, borderColor: "#7b2cbf", borderWidth: 7, alignItems: "center", justifyContent: "center", padding: 5, position: "absolute",
                             bottom: "8.5%",
-                            left: "38%",
+                            left: "36.5%",
                         }}>
                             <CountdownCircleTimer
                                 isPlaying
@@ -697,7 +748,7 @@ export default class GameRobot extends Component {
                                 {({ remainingTime }) =>
 
                                     <View style={[styles.diceBtn3, {
-                                        backgroundColor: this.state.turn == BLUE ? "#0582ca" : this.state.turn == RED ? "#780000" : this.state.turn == YELLOW ? "#fdc500" : this.state.turn == GREEN ? "#004b23" : "red", borderWidth: 8,
+                                        backgroundColor: this.state.turn == BLUE ? "#7209b7" : this.state.turn == RED ? "#780000" : this.state.turn == YELLOW ? "#fdc500" : this.state.turn == GREEN ? "#004b23" : "red", borderWidth: 8,
                                         borderColor: 'rgba(0,0,0,0.2)',
                                     }]}>
 
@@ -706,7 +757,7 @@ export default class GameRobot extends Component {
 
                                                 {
                                                     transform: [{ rotate: this.state.rollingRotation }],
-                                                    backgroundColor: this.state.turn == BLUE ? "#0582ca" : this.state.turn == RED ? "#780000" : this.state.turn == YELLOW ? "#fdc500" : this.state.turn == GREEN ? "#004b23" : null
+                                                    backgroundColor: this.state.turn == BLUE ? "#7209b7" : this.state.turn == RED ? "#780000" : this.state.turn == YELLOW ? "#fdc500" : this.state.turn == GREEN ? "#004b23" : null
                                                 },
                                             ]}
                                         >
@@ -852,6 +903,16 @@ export default class GameRobot extends Component {
 
                 // let randomInt =  Math.floor(Math.random() * (6 - 4 + 1) + 4)
                 let randomInt = Math.floor(Math.random() * Math.floor(6));
+
+
+                console.log("yellow extra chance",this.state.extraChance)
+                if(this.state.extraChance >= 1){
+
+                   randomInt = Math.floor(Math.random() * Math.floor(5)); 
+                   console.log("yellow extra chance greater than 1", randomInt)
+                }
+
+
 
 
                 console.log("dicenumber robot", this.getRandomInt(randomInt))
@@ -1583,7 +1644,6 @@ export default class GameRobot extends Component {
                 const homePosition = ["Y14", "Y15", "Y16", "Y17", "Y18"]
                 const targetPosition = ["G9", "G10", "G11", "G12", "G13", "B1"]
                 const usedPieces = []
-
                 const homePieces = []
 
                 console.log("activepieces[0]position", activePieces[0].position)
@@ -1824,7 +1884,8 @@ export default class GameRobot extends Component {
             while (true) {
                 randomInt = Math.floor(Math.random() * 6) + 1; // Generate a random number from 1 to 6
                 if (!vArr.includes(randomInt)) {
-                    break; // Exit loop if the generated random integer is not in vArr
+                    break; 
+                    
                 }
             }
 
@@ -1837,11 +1898,27 @@ export default class GameRobot extends Component {
 
         else {
             if (value) {
-                let randomInt = Math.floor(Math.random() * (6 - 4 + 1) + 4)
+                let randomInt;
+
+                if(this.state.extraChance >= 1){
+                   randomInt = Math.floor(Math.random() * 5) + 1;
+                }
+                else{
+                    randomInt = Math.floor(Math.random() * (6 - 4 + 1) + 4)
+                }
+         
                 return randomInt;
             }
             else {
-                let randomInt = Math.floor(Math.random() * 6) + 1;
+
+                let randomInt;
+                if(this.state.extraChance >= 1){
+                    randomInt = Math.floor(Math.random() * 5) + 1;
+                 }
+                 else{
+                   randomInt = Math.floor(Math.random() * 6) + 1;
+                 }
+             
                 return randomInt;
             }
 
@@ -2148,10 +2225,6 @@ export default class GameRobot extends Component {
             piece.position = newPosition;
             piece.updateTime = new Date().getTime();
 
-
-
-
-
             if (piece.name == "one") {
                 piece.oneCount.push(move)
 
@@ -2278,7 +2351,9 @@ export default class GameRobot extends Component {
         }
 
 
-    }
+    } 
+    
+
     renderPlayerBox(playerName, player, playerScore, lifeline, timer, customStyle) {
         const { one, two, three, four } = player.pieces;
         customStyle.opacity = this.state.turn == player.player ? 1 : 0.6;
@@ -2309,10 +2384,6 @@ export default class GameRobot extends Component {
             />
         )
     }
-
-
-
-
     isItSafeToMove(piece) {
         const bluePieces = this.state.blue.pieces;
         const robotPiecePosition = piece.position;

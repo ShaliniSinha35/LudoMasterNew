@@ -14,54 +14,10 @@ const App = () => {
   const [mobile,setMobile]= useState(null)
 
 
-//   const getNumber = async () => {
-//     try {
-//         let number = await AsyncStorage.getItem('user');
-//         console.log("User ID:", number);
-       
-    
-//         if (!number) {
-//             console.log("User ID not found in AsyncStorage");
-//             return; // or handle this case as appropriate
-//         }
-        
-//         // Convert number to string before sending the request
-//         const userId = parseInt(number.replace(/\D/g, ''), 10);
-
-
-//         const res = await axios.get(`https://ludo-b2qo.onrender.com/verify?userId=${userId}`);
-//         const data = res.data;
-
-//         console.log("Response from server:", data);
-     
-    
-//         if (data && data.length > 0) {
-//             setVerified(true);
-
-//             console.log("41",data[0].mobile)
-          
-//             setMobile(parseInt(data[0].mobile))
-       
-//         } else {
-//             setVerified(false);
-//         }
-//     } catch (error) {
-//         console.log("43 Error fetching data:", error);
-//         // Handle errors here, e.g., show an error message to the user
-//     }
-//   };
-
-
-// useEffect(() => {
-//     getNumber()
-// },[])
-
-
+  // AsyncStorage.clear()
 
   const Stack = createNativeStackNavigator();
   return (
-
-    
     <NativeBaseProvider>
       <NavigationContainer>
         <SafeAreaView
@@ -77,6 +33,7 @@ const App = () => {
             backgroundColor={"white"}
             barStyle={"dark-content"}
             translucent={false}
+           
           />
 
 

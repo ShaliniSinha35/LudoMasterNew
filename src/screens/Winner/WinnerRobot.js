@@ -1,4 +1,4 @@
-import { View, Text, BackHandler, Button, Dimensions, StyleSheet, ImageBackground, Image, TouchableOpacity } from 'react-native'
+import { View, Text, Button, Dimensions, StyleSheet, ImageBackground, Image, TouchableOpacity, ScrollView,BackHandler,Alert} from 'react-native'
 import React, { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Table, TableWrapper, Row, Rows, Col } from 'react-native-table-component';
@@ -23,7 +23,28 @@ const WinnerRobot = (props) => {
   const [wallet,setWallet]= useState(0)
 
 
-  console.log("winner", bluePlayer, playerNumber)
+  console.log("winner", bluePlayer, playerNumber,props.navigation)
+
+ 
+
+  useEffect(() => {
+    const backAction = async() => {
+      props.backToHome()
+      props.onRedInput('')
+      props.onBlueInput('')
+      props.onYellowInput('')
+      props.onGreenInput('')
+  
+      await AsyncStorage.removeItem('playerArray');
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
 
   const getPlayerDetails = async () => {
@@ -100,10 +121,10 @@ const WinnerRobot = (props) => {
   
     try {
       const response = await axios.post(
-        'https://ludo-b2qo.onrender.com/updateWallet',
+        'https://ludomaster.net/ludo/updateWallet',
         { userId: playerNumber, wallet }
 
-      );
+      );-
   
       // Handle the response as needed
       console.log(response.data);
@@ -137,8 +158,8 @@ const WinnerRobot = (props) => {
           
           <Text allowFontScaling={false} style={{ fontSize: 15, marginTop: 20, color: "white" }}>Match Results</Text>
 
-          {playerDetail != null && <View style={{ width: 300, height: 80, backgroundColor: "#e9ecef", padding:5, marginTop: 30, borderRadius: 40, flexDirection: "row", alignItems: "center",justifyContent:"space-around" }}>
-            <View><Text style={{ color:"#240046",fontSize:12 }}>Rank</Text><Text style={{ textAlign:"center",color:"#240046",fontWeight:600,fontSize:20 }}>{playerRank + 1}</Text></View>
+          {playerDetail != null && <View style={{ paddingHorizontal:25, paddingVertical:5, backgroundColor: "#e9ecef", marginTop: 30, borderRadius: 40, flexDirection: "row", alignItems: "center",justifyContent:"space-around",borderWidth:5,borderColor:"#679436" }}>
+            <View style={{marginRight:4}}><Text style={{ color:"#240046",fontSize:12 }}>Rank</Text><Text style={{ textAlign:"center",color:"#240046",fontWeight:600,fontSize:20 }}>{playerRank + 1}</Text></View>
             <View style={{width:55,height:55,borderRadius:50,borderColor:"green",borderWidth:2,alignItems:"center"}}><Image source={require("../../../assets/player2.png")} style={{ width: 50, height: 50, borderRadius: 50 }}></Image></View>
             {
               playerRank === 0 ? (

@@ -11,7 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
-
+import socket from '../../../utils/Socket';
+import { ScrollView } from 'native-base';
 export default Home = ({
   isStartGameModalVisible,
   onNewGameButtonPress,
@@ -48,7 +49,9 @@ export default Home = ({
   const [playerTwo, setPlayerTwo] = useState(null);
   const [walletValue, setWalletValue] = useState(null)
 
-  // console.log("home number", mobileNumber,number)
+
+
+
 
 
 
@@ -99,7 +102,7 @@ export default Home = ({
     if(mobileNumber){
 
       try {
-        const res = await axios.get(`https://ludo-b2qo.onrender.com/getUserData?userId=${mobileNumber}`);
+        const res = await axios.get(`https://ludomaster.net/ludo/getUserData?userId=${mobileNumber}`);
   
         const data = res.data
   
@@ -177,13 +180,13 @@ export default Home = ({
       storeRoomId(roomId);
 
 
-      // console.log("58",roomId)
+      console.log("58",roomId)
     });
 
     Socket.on('roomStatus', (room) => {
       setRoomStatus(room);
 
-      // console.log("62",room)
+      console.log("62",room)
 
     });
 
@@ -237,7 +240,7 @@ export default Home = ({
       }
 
 
-      // console.log("80", room)
+      console.log("80", room)
 
 
     });
@@ -254,6 +257,9 @@ export default Home = ({
 
 
   const handleTwo = () => {
+
+
+  
 
     setFlag('Searching for a Player...')
     const playerId = number ? number : mobileNumber
@@ -390,30 +396,55 @@ useEffect(() => {
 
 
   return (
-    <ImageBackground source={require("../../../assets/bg.png")} style={styles.container}>
+    <ImageBackground source={require("../../../assets/bg3.jpg")} style={styles.container}>
 
       <>
 
 
-       <View style={{width:Dimensions.get('screen').width, height:80, position: "absolute", top:0,flexDirection:"row",justifyContent:"space-around",margin:20}}>
+       <View style={{width:Dimensions.get('screen').width, height:80, position: "absolute", top:0,flexDirection:"row",justifyContent:"space-between",margin:20,padding:5}}>
 
         <View style={{flexDirection:"row"}}>
         <View style={{width:45,height:45,borderRadius:40,borderColor:"#f6ae2d",borderWidth:2,alignItems:"center"}}>
         <Image source={require("../../../assets/player2.png")} style={{ width: 40, height: 40, borderRadius: 50 }}></Image>
         </View>
      
-        { number && <Text style={{ color: "white", textAlign: "center", marginTop: 2, fontSize: 15, marginTop: 10 }}>  +91{number}</Text>}
+        { number && <Text style={{ color: "white", textAlign: "center", marginTop: 2, fontSize: 15, marginTop: 10,fontWeight:"bold"}}>  +91{number}</Text>}
         </View>
          <View style={{alignItems:"center"}}>
 
-           <TouchableOpacity style={{height:40,width:90,backgroundColor:"#008000",borderRadius:10,flexDirection:"row", alignItems:"center",padding:5,justifyContent:"space-around",elevation:5 }}>
+         <TouchableOpacity
+      style={{
+        backgroundColor: "#008000",
+        borderRadius: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 8,
+        justifyContent: "space-around",
+        elevation: 5,
+        borderColor: "#fff",
+        borderWidth: 1,
+        gap:5,
+        paddingHorizontal:10
+    
+   
+      }}
+    >
+      <FontAwesome5 name="wallet" size={22} color="white" />
 
-           <FontAwesome5 name="wallet" size={24} color="white" />
+      
+        {walletValue ? 
+   
+          <Text numberOfLines={3} style={{ color: "white", textAlign: "center", fontSize: 20,marginLeft:5 }}>
+                     <FontAwesome name="rupee" size={18} color="white" /> {walletValue}
+          </Text>
+   
+         : (
+          <Text style={{ color: "white", textAlign: "center", fontSize: 20 }}>
+            <FontAwesome name="rupee" size={18} color="white" /> 0
+          </Text>
+        )}
 
-           {walletValue ? <Text style={{ color: "white", textAlign: "center", marginTop: 5, fontSize: 22 }}> <FontAwesome name="rupee" size={18} color="white" /> {walletValue}</Text>
-            : <Text style={{ color: "white", textAlign: "center", marginTop: 5, fontSize: 22 }}> <FontAwesome name="rupee" size={18} color="white" /> 0 </Text>
-          }
-           </TouchableOpacity>
+    </TouchableOpacity>
 
           </View>
            
@@ -439,7 +470,7 @@ useEffect(() => {
             <>
               {/* <Image source={require("../../../assets/applogo.png")} style={{ position: "absolute", top: 20, height: 150, width: 150, resizeMode: "contain" }}></Image> */}
 
-              <TouchableOpacity style={{ width: 120, height: 50, flexDirection: "row", marginBottom: 45, justifyContent: "center", backgroundColor: "#240046", borderWidth: 1, borderRadius: 10, alignItems: "center" }}>
+              <TouchableOpacity style={{ width: 120, height: 50, flexDirection: "row", marginBottom: 45, justifyContent: "center", backgroundColor: "#bd1d24", borderWidth: 1, borderRadius: 10, alignItems: "center",borderColor:"#fff" }}>
                 <View style={{ margin: 8 }}>
                   <MaterialCommunityIcons name="sword-cross" size={24} color="white" />
                 </View>
@@ -464,7 +495,7 @@ useEffect(() => {
                 </>
 
               </View>
-              <Text style={{ color: "#ff8800", fontSize: 18, marginBottom: 10, fontWeight: 500 }}> VS </Text>
+              <Image source={require("../../../assets/vs.png")} style={{height:80,width:80,resizeMode:"contain"}}></Image>
 
                 <View style={{width:250,height:"auto"}}>
                 <Animated.View
@@ -496,11 +527,11 @@ useEffect(() => {
 
             <>
 
-              <Image source={require("../../../assets/applogo.png")} style={{ height: 180, width: 170, resizeMode: "contain" }}></Image>
+              <Image source={require("../../../assets/LUDO.png")} style={{ height: 180, width: 170, resizeMode: "contain" }}></Image>
 
 
               <TouchableOpacity style={styles.newGameButton} onPress={handleTwo}>
-                <Text style={{ fontSize: 18, color: "white" }}>2 Players</Text>
+                <Text style={{ fontSize: 18, color: "white",fontWeight:"bold",letterSpacing:2 }}>LET's PLAY</Text>
               </TouchableOpacity>
             </>
 
@@ -527,7 +558,8 @@ useEffect(() => {
 
                 </View>
 
-                <Text style={{ color: "#ff8800", fontSize: 12, marginBottom: 30, fontWeight: 500 }}> VS</Text>
+                {/* <Text style={{ color: "#ff8800", fontSize: 12, marginBottom: 30, fontWeight: 500 }}> VS</Text> */}
+                <Image source={require("../../../assets/vs.png")} style={{height:80,width:80,resizeMode:"contain"}}></Image>
                 <View
                   style={[
                     styles.box,
@@ -614,25 +646,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffff',
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    resizeMode:"contain"
 
   },
   logoStyle: {
     color: '#f00',
     fontSize: 40,
     alignSelf: 'center',
-    marginTop: 100,
+    marginTop: 60,
     fontWeight: 'bold'
   },
   newGameButton: {
-    backgroundColor: '#240046',
+    backgroundColor: '#bd1d24',
     width: 200,
     padding: 10,
     borderColor: '#ddd',
     borderWidth: 2,
     borderRadius: 10,
     alignSelf: 'center',
-    marginTop: 20,
+    marginTop: 10,
     alignItems: 'center',
     elevation: 4,
   },
@@ -645,7 +678,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderColor: '#ddd',
     borderWidth: 2,
-    marginBottom: 70
+    marginBottom: 20,
+    marginTop:10
   },
   box1: {
     width: 70,

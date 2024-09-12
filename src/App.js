@@ -18,7 +18,7 @@ const App = ({navigation}) => {
 
 
   const route = useRoute()
-  // console.log("155", route.params.mobile)
+  console.log("155", route.params.mobile,navigation)
   const [state, setState] = useState({
     isGameInProgress: false,
     isStartGameModalVisible: false,
@@ -113,6 +113,7 @@ clearAsyncStorageMultiple(keysToRemove).then(success => {
         onEnd={handleEndGame}
         number ={route.params.mobile}
         roomId = {state.roomId}
+        navigation={navigation}
         
       />
 
@@ -151,6 +152,7 @@ clearAsyncStorageMultiple(keysToRemove).then(success => {
         currentPlayer={state.currentPlayer}
         isPlayWithRobot={state.isPlayWithRobot}
         number ={route.params.mobile}
+        navigation={navigation}
       />
     );
   }
